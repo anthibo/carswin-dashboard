@@ -5,6 +5,8 @@ import type { AppProps } from 'next/app'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { SSRProvider } from 'react-bootstrap'
+import { SessionProvider } from "next-auth/react"
+
 import { ProgressBar } from '@components/ProgressBar'
 
 // You change this configuration value to false so that the Font Awesome core SVG library
@@ -13,15 +15,17 @@ import { ProgressBar } from '@components/ProgressBar'
 // See https://fontawesome.com/v6/docs/web/use-with/react/use-with#next-js
 config.autoAddCss = false
 
-function MyApp({ Component, pageProps }: AppProps) {
+function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   // In server-side rendered applications, a SSRProvider must wrap the application in order
   // to ensure that the auto-generated ids are consistent between the server and client.
   // https://react-bootstrap.github.io/getting-started/server-side-rendering/
   return (
     <SSRProvider>
-      <ProgressBar />
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Component {...pageProps} />
+      <SessionProvider session={session}>
+        <ProgressBar />
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+        <Component {...pageProps} />
+      </SessionProvider>
     </SSRProvider>
   )
 }

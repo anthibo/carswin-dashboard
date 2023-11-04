@@ -32,7 +32,7 @@ const Client: NextPage<Props> = (props) => {
   )
 
   // swr: data -> axios: data -> resource: data
-  const { data: { data: resource } } = useSWRAxios<Resource<Pokemon>>({
+  const { data: { data: resource }, mutate } = useSWRAxios<Resource<Pokemon>>({
     url: pokemonListURL,
     params: {
       _page: page,
@@ -50,6 +50,8 @@ const Client: NextPage<Props> = (props) => {
       'x-total-count': '0',
     },
   })
+
+  mutate()
 
   useEffect(() => {
     setFallbackResource(resource)

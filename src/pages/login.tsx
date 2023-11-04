@@ -5,38 +5,61 @@ import { faLock } from '@fortawesome/free-solid-svg-icons'
 import {
   Button, Col, Container, Form, InputGroup, Row,
 } from 'react-bootstrap'
-import Link from 'next/link'
-import { SyntheticEvent, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import axios from 'axios'
-import { deleteCookie, getCookie } from 'cookies-next'
+import { useForm, SubmitHandler } from "react-hook-form"
+import { User, UserType } from '@models/user'
+import { useSession, signIn } from 'next-auth/react'
+
+type AuthForm = {
+  email: string
+  password: string
+}
 
 const Login: NextPage = () => {
   const router = useRouter()
-  const [submitting, setSubmitting] = useState(false)
+  const { data: session } = useSession()
+  const [authSession, setAuthSession] = useState(session)
 
-  const getRedirect = () => {
-    const redirect = getCookie('redirect')
-    if (redirect) {
-      deleteCookie('redirect')
-      return redirect.toString()
+  useEffect(() => {
+    setAuthSession(session)
+  }, [session])
+
+  //TODO: refactor to auth guard
+  useEffect(() => {
+    const user = authSession?.user as User
+    if (user) {
+      router.push(getRedirect(user.type))
     }
+  }, [authSession])
 
-    return '/'
+  const getRedirect = (type: UserType) => {
+    switch (type) {
+      case UserType.SUPERADMIN:
+        return '/admin'
+      case UserType.VENDOR:
+        return '/vendor'
+    }
   }
 
-  const login = async (e: SyntheticEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
+  const onSubmit: SubmitHandler<AuthForm> = async (data) => {
+    console.log(data)
+    const { email, password } = data
 
-    setSubmitting(true)
-
-    const res = await axios.post('api/mock/login')
-    if (res.status === 200) {
-      router.push(getRedirect())
-    }
-    setSubmitting(false)
+    await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
   }
+
+  // TODO: add error handling
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<AuthForm>()
+
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center dark:bg-transparent">
@@ -49,7 +72,7 @@ const Login: NextPage = () => {
                   <h1>Login</h1>
                   <p className="text-black-50">Sign In to your account</p>
 
-                  <form onSubmit={login}>
+                  <form onSubmit={handleSubmit(onSubmit)}>
                     <InputGroup className="mb-3">
                       <InputGroup.Text>
                         <FontAwesomeIcon
@@ -58,12 +81,10 @@ const Login: NextPage = () => {
                         />
                       </InputGroup.Text>
                       <Form.Control
-                        name="username"
-                        required
-                        disabled={submitting}
-                        placeholder="Username"
-                        aria-label="Username"
-                        defaultValue="Username"
+                        {...register("email", { required: true })}
+                        placeholder="email"
+                        aria-label="Email"
+                        type='email'
                       />
                     </InputGroup>
 
@@ -75,19 +96,16 @@ const Login: NextPage = () => {
                         />
                       </InputGroup.Text>
                       <Form.Control
-                        type="password"
-                        name="password"
-                        required
-                        disabled={submitting}
+                        {...register("password", { required: true })}
                         placeholder="Password"
+                        type='password'
                         aria-label="Password"
-                        defaultValue="Password"
                       />
                     </InputGroup>
 
                     <Row>
                       <Col xs={6}>
-                        <Button className="px-4" variant="primary" type="submit" disabled={submitting}>Login</Button>
+                        <Button className="px-4" variant="primary" type="submit" >Login</Button>
                       </Col>
                       <Col xs={6} className="text-end">
                         <Button className="px-0" variant="link" type="submit">
@@ -104,16 +122,9 @@ const Login: NextPage = () => {
                 className="bg-primary text-white d-flex align-items-center justify-content-center p-5"
               >
                 <div className="text-center">
-                  <h2>Sign up</h2>
                   <p>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                    tempor incididunt ut labore et dolore magna aliqua.
+                    Welcome to Cars Win Dashboard 🚘
                   </p>
-                  <Link href="/register">
-                    <button className="btn btn-lg btn-outline-light mt-3" type="button">
-                      Register Now!
-                    </button>
-                  </Link>
                 </div>
               </Col>
             </Row>
@@ -123,5 +134,6 @@ const Login: NextPage = () => {
     </div>
   )
 }
+
 
 export default Login

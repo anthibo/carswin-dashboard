@@ -50,6 +50,9 @@
       "@models/*": [
         "src/models/*"
       ],
+      "@services": [
+        "src/services"
+      ],
       "@pages": [
         "src/pages"
       ],
